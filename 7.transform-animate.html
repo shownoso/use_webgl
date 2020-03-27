@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>7. Transform-animate</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script src="./matrix.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器 优先的操作靠近 a_pos
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      uniform mat4 u_translate;
+      uniform mat4 u_scale;
+      uniform mat4 u_rotate;
+      void main() {
+        gl_Position = u_scale * u_rotate * u_translate * a_pos;
+      }
+    `;
+    // 片元着色器
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      uniform vec4 u_color;
+      void main() {
+        gl_FragColor = u_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.0,
+      0.3, 0.3,
+      0.6, 0.0,
+    ]);
+
+    initBuffer(gl, dataVertices, program, 'a_pos');
+
+    let u_color = gl.getUniformLocation(program, 'u_color');
+    gl.uniform4f(u_color, 1.0, 0.0, 0.0, 1.0);
+
+    let u_translate = gl.getUniformLocation(program, 'u_translate');
+    let u_rotate = gl.getUniformLocation(program, 'u_rotate');
+    let u_scale = gl.getUniformLocation(program, 'u_scale');
+    
+
+
+    let Tx = 0.0;
+    let Ty = 0.0;
+    let Sx = 1.0;
+    let Sy = 1.0;
+    let angle = 0.0;
+
+    let step = 0.02;
+    let stepScale = 0.01;
+    let stepAngle = 20;
+
+
+    function animation() {
+     
+      Tx += step;
+      Ty += step;
+      Sx -= stepScale;
+      Sy -= stepScale;
+      angle += stepAngle;
+
+      gl.uniformMatrix4fv(u_translate, false, translate(Tx, Ty, 0.0));
+      gl.uniformMatrix4fv(u_rotate, false, rotate(angle));
+      gl.uniformMatrix4fv(u_scale, false, scale(Sx, Sy, 1.0));
+
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      
+    }
+
+    function away() {
+      animation();
+      var id = requestAnimationFrame(away);
+      if (Sx <= 0) {
+        cancelAnimationFrame(id);
+        console.log('done');
+      }
+      
+    }
+    away();
+
+  </script>
+</body>
+
+</html>
