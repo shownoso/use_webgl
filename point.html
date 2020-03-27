@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1. Point</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      void main() {
+        gl_Position = a_pos;
+        gl_PointSize = 10.0;
+      }
+    `;
+    // 片元着色器
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      uniform vec4 u_color;
+      void main() {
+        gl_FragColor = u_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER,FRAGMENT_SHADER);
+    
+    let dataVertices = new Float32Array([
+      0.0, 0.0,
+      0.5, 0.5,
+      0.5, -0.5,
+      -0.5, -0.5,
+      -0.5, 0.5
+    ]);
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+
+    // 外部传入变量
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    // gl.vertexAttrib4f(a_pos, 0.0, 0.0, 1.0, 1.0); // 使用直接量传入
+    gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_pos);
+
+    let u_color = gl.getUniformLocation(program, 'u_color');
+    gl.uniform4f(u_color, 1.0, 0.0, 0.0, 1.0);
+
+    gl.drawArrays(gl.POINTS, 0, 5); // 5个点
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>0. Guide</title>
+</head>
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0,1.0,1.0,1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    let VERTEX_SHADER = `
+      void main() {
+        gl_Position = vec4(0.0, 0.0, 1.0, 1.0);
+        gl_PointSize = 10.0;
+      }
+    `
+    let FRAG_SHADER = `
+      void main() {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      }
+    `
+
+    let vertex = gl.createShader(gl.VERTEX_SHADER);
+    let frag = gl.createShader(gl.FRAGMENT_SHADER);
+
+    gl.shaderSource(vertex, VERTEX_SHADER);
+    gl.shaderSource(frag, FRAG_SHADER);
+    
+    gl.compileShader(vertex);
+    gl.compileShader(frag);
+
+    let program = gl.createProgram();
+    gl.attachShader(program, vertex);
+    gl.attachShader(program, frag);
+
+    gl.linkProgram(program);
+    gl.useProgram(program);
+    gl.drawArrays(gl.POINTS, 0, 1);
+  </script>
+</body>
+</html>

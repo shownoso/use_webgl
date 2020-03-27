@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2. Graph</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      void main() {
+        gl_Position = a_pos;
+        gl_PointSize = 10.0;
+      }
+    `;
+    // 片元着色器
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      uniform vec4 u_color;
+      void main() {
+        gl_FragColor = u_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER,FRAGMENT_SHADER);
+    
+    let dataVertices = new Float32Array([
+      0.0, 0.0,
+      0.6, 0.0,
+      0.3, 0.3,
+      -0.3, 0.3,
+      -0.6, 0.0,
+      -0.3, -0.3,
+      0.3, -0.3,
+      0.6, 0.0,
+    ]);
+
+    initBuffer(gl, dataVertices, program, 'a_pos');
+
+    let u_color = gl.getUniformLocation(program, 'u_color');
+    gl.uniform4f(u_color, 1.0, 0.0, 0.0, 1.0);
+
+    // gl.drawArrays(gl.LINES, 0, 2); // 一条线由两个点组成
+    // gl.drawArrays(gl.LINE_STRIP, 0, 3); // 线段带
+    // gl.drawArrays(gl.LINE_LOOP, 0, 3); // 回路 自动连接头尾 但是不填充颜色
+    // gl.drawArrays(gl.TRIANGLES, 0, 3); // 三角形
+    // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // 三角带 比如四边形
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 8); // 三角扇 比如六边形
+
+
+
+  </script>
+</body>
+
+</html>

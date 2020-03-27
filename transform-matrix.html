@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>6. Transform-matrix</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      uniform mat4 u_transform;
+      void main() {
+        gl_Position = u_transform * a_pos;
+      }
+    `;
+    // 片元着色器
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      uniform vec4 u_color;
+      void main() {
+        gl_FragColor = u_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.0,
+      0.3, 0.3,
+      0.6, 0.0,
+    ]);
+
+    initBuffer(gl, dataVertices, program, 'a_pos');
+
+    let u_color = gl.getUniformLocation(program, 'u_color');
+    gl.uniform4f(u_color, 1.0, 0.0, 0.0, 1.0);
+
+    let u_transform = gl.getUniformLocation(program, 'u_transform');
+
+    let Tx = 0.5;
+    let Ty = 0.5;
+    let Tz = 0.5;
+    let step = 0.01;
+
+    let angle = 0.0;
+    let stepAngle = 5.0;
+    window.onkeydown = (e) => {
+
+      let key = e.keyCode;
+      // if (key === 37) {
+      //   Tx -= step;
+      // }
+      // if (key === 39) {
+      //   Tx += step;
+      // }
+      // if (key === 40) {
+      //   Ty -= step;
+      // }
+      // if (key === 38) {
+      //   Ty += step;
+      // }
+
+      if (key === 38) {
+        angle += stepAngle;
+      }
+
+      if (key === 40) {
+        angle -= stepAngle;
+      }
+
+      transform();
+
+    }
+
+    function transform() {
+      // 创建矩阵，主序是矩阵的纵向
+      // 平移矩阵
+      // let dataMatrix = new Float32Array([
+      //   1.0, 0.0, 0.0, 0.0,
+      //   0.0, 1.0, 0.0, 0.0,
+      //   0.0, 0.0, 1.0, 0.0,
+      //   Tx, Ty, Tz, 1.0
+      // ]);
+
+      // 缩放矩阵
+      // let dataMatrix = new Float32Array([
+      //   Tx, 0.0, 0.0, 0.0,
+      //   0.0, Ty, 0.0, 0.0,
+      //   0.0, 0.0, Tz, 0.0,
+      //   0.0, 0.0, 0.0, 1.0
+      // ]);
+
+      // 旋转矩阵
+      let sinB = Math.sin(angle * Math.PI / 180.0);
+      let cosB = Math.cos(angle * Math.PI / 180.0);
+      let dataMatrix = new Float32Array([
+        cosB, sinB, 0.0, 0.0,
+        -sinB, cosB, 0.0, 0.0,
+        0.0, 0.0, 1, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      ]);
+      gl.uniformMatrix4fv(u_transform, false, dataMatrix);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3); // 三角形
+
+    }
+
+    transform();
+
+
+  </script>
+</body>
+
+</html>

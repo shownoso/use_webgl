@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5. Transform-scale</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      uniform float u_scale;
+      void main() {
+        gl_Position.x = a_pos.x;
+        gl_Position.y = a_pos.y;
+        gl_Position.z = a_pos.z; 
+        gl_Position.w = u_scale; 
+      }
+    `;
+    // 片元着色器
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      uniform vec4 u_color;
+      void main() {
+        gl_FragColor = u_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      -0.5, -0.5,
+      0.0, 0.5,
+      0.5, -0.5,
+    ]);
+
+    initBuffer(gl, dataVertices, program, 'a_pos');
+
+    let u_color = gl.getUniformLocation(program, 'u_color');
+    gl.uniform4f(u_color, 1.0, 0.0, 0.0, 1.0);
+ 
+    let u_scale = gl.getUniformLocation(program, 'u_scale');
+
+    let scale = 1.0; // 值越大图越小
+    let step = 0.1;
+    
+    window.onkeydown = function(e) {
+      let key = e.keyCode;
+      if (key === 38) {
+        scale -= step;
+      }
+      if (key === 40) {
+        scale += step;
+      }
+      zoom();
+    }
+    function zoom() {
+      gl.uniform1f(u_scale, scale);  
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3); // 三角形
+    }
+
+    zoom();
+
+
+  </script>
+</body>
+
+</html>

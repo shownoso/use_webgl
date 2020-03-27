@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4. Transform-rotate</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      uniform float u_sinB, u_cosB;
+      void main() {
+        gl_Position.x = a_pos.x * u_cosB - a_pos.y * u_sinB; 
+        gl_Position.y = a_pos.x * u_sinB + a_pos.y * u_cosB;
+        gl_Position.z = a_pos.z; 
+        gl_Position.w = a_pos.w; 
+      }
+    `;
+    // 片元着色器
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      uniform vec4 u_color;
+      void main() {
+        gl_FragColor = u_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.0,
+      0.3, 0.3,
+      0.6, 0.0,
+    ]);
+
+    initBuffer(gl, dataVertices, program, 'a_pos');
+
+    let u_color = gl.getUniformLocation(program, 'u_color');
+    gl.uniform4f(u_color, 1.0, 0.0, 0.0, 1.0);
+ 
+    let u_sinB = gl.getUniformLocation(program, 'u_sinB');
+    let u_cosB = gl.getUniformLocation(program, 'u_cosB');
+
+    let angle = 0.0;
+    let step = 5.0;
+    
+    window.onkeydown = function(e) {
+      let key = e.keyCode;
+      if (key === 38) {
+        angle += step;
+      }
+      if (key === 40) {
+        angle -= step;
+      }
+      rotate();
+    }
+    function rotate() {
+      let sinB = Math.sin(angle * Math.PI / 180.0);
+      let cosB = Math.cos(angle * Math.PI / 180.0);
+      gl.uniform1f(u_sinB, sinB);
+      gl.uniform1f(u_cosB, cosB);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3); // 三角形
+    }
+
+    rotate();
+
+
+  </script>
+</body>
+
+</html>
