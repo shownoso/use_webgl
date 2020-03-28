@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10. Varying 通过varying在顶点与片元间传递变量</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script src="./matrix.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      attribute vec4 a_color;
+      varying vec4 v_color;
+      void main() {
+        gl_Position = a_pos;
+        gl_PointSize = 20.0;
+        v_color = a_color;
+      }
+    `;
+    // 片元着色器 定义同名 varying 变量用于自动传递
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      varying vec4 v_color;
+      void main() {
+        gl_FragColor = v_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.0, 1.0, 0.0, 0.0,
+      0.3, 0.3, 0.0, 1.0, 0.0,
+      0.6, 0.0, 0.0, 0.0, 1.0
+    ]);
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    let a_color = gl.getAttribLocation(program, 'a_color');
+
+    let BPE = dataVertices.BYTES_PER_ELEMENT;
+    gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, BPE * 5, 0);
+    // 一行五个值， 偏移量为 2 个值 每行后三个值是颜色
+    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, BPE * 5, BPE * 2);
+
+    gl.enableVertexAttribArray(a_pos);
+    gl.enableVertexAttribArray(a_color);
+
+
+    // gl.drawArrays(gl.POINTS, 0, 3);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  </script>
+</body>
+
+</html>
