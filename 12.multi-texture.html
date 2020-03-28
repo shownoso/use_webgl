@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>12. 纹理映射 （预览：启动本地服务以防资源跨域）</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script src="./matrix.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器 a_TexCoord： 纹理坐标信息
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      attribute vec2 a_TexCoord;
+      varying vec2 v_TexCoord;
+      void main() {
+        gl_Position = a_pos;
+        v_TexCoord = a_TexCoord;
+      }
+    `;
+    // 片元着色器 获取纹理 texture2D(u_Sampler, v_TexCoord)
+    // gl_FragColor = texture2D(u_Sampler, v_TexCoord);
+    let FRAGMENT_SHADER = `
+      precision mediump float;
+      uniform sampler2D u_Sampler;
+      uniform sampler2D u_Sampler2;
+      varying vec2 v_TexCoord;
+      void main() {
+        vec4 color = texture2D(u_Sampler, v_TexCoord);
+        vec4 color2 = texture2D(u_Sampler2, v_TexCoord);
+        gl_FragColor = color * color2;
+
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      -0.5, 0.5, 0.0, 1.0,
+      -0.5, -0.5, 0.0, 0.0,
+      0.5, 0.5, 1.0, 1.0,
+      0.5, -0.5, 1.0, 0.0
+    ]);
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    let a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
+
+    let BPE = dataVertices.BYTES_PER_ELEMENT;
+
+    gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, BPE * 4, 0);
+    // 一行四个值， 偏移量为 2 个值，每行后两个值为纹理坐标
+    gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, BPE * 4, BPE * 2);
+
+    gl.enableVertexAttribArray(a_pos);
+    gl.enableVertexAttribArray(a_TexCoord);
+
+
+    initTexture(gl);
+
+    // 注意 使用 2 的幂次像素的图片
+    function initTexture(gl) {
+      let texture = gl.createTexture(); // 1. 创建纹理对象
+      let texture2 = gl.createTexture(); 
+      let u_Sampler = gl.getUniformLocation(program, 'u_Sampler'); // 片元位置
+      let u_Sampler2 = gl.getUniformLocation(program, 'u_Sampler2');
+      let img = new Image();
+      let img2 = new Image();
+      // 2. 加载图片
+      img.onload = function () {
+        loadTexture(gl, texture, u_Sampler, img, 0);
+      }
+      img2.onload = function () {
+        loadTexture(gl, texture2, u_Sampler2, img2, 1);
+      }
+      img.src = 'img/galaxy.png';
+      img2.src= 'img/galaxy2.png';
+      return true;
+    }
+
+    let g_texUnit = false;
+    let g_texUnit2 = false;
+
+    function loadTexture(gl, texture, u_Sampler, img, textUnit) {
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // 3. 图像Y轴翻转
+      if (textUnit === 0) {
+        gl.activeTexture(gl.TEXTURE0); //4. 激活 0号纹理单元
+        g_texUnit = true;
+      } else {
+        gl.activeTexture(gl.TEXTURE1); // 激活 1号纹理单元
+        g_texUnit2 = true;
+      }
+      
+      gl.bindTexture(gl.TEXTURE_2D, texture); // 5. 绑定纹理对象 还有一种TEXTURE_CUBE_MAP，立体纹理
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); // 6. 配置纹理参数
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img); // 7. 分配纹理图像
+      gl.uniform1i(u_Sampler, textUnit); // 8. 对应采样器 将纹理单元传递给片元着色器
+
+      if (g_texUnit && g_texUnit2) {
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); // 绘制三角带
+      }
+      
+    }
+
+
+
+  </script>
+</body>
+
+</html>
