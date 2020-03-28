@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>9. mixed-buffer：仅使用单个 buffer 实现 8</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="500" width="500"></canvas>
+  <script src="./lib.js"></script>
+  <script src="./matrix.js"></script>
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 顶点着色器 优先的操作靠近 a_pos
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      attribute float a_size;
+      void main() {
+        gl_Position = a_pos;
+        gl_PointSize = a_size;
+      }
+    `;
+    // 片元着色器
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      uniform vec4 u_color;
+      void main() {
+        gl_FragColor = u_color;
+      }
+    `;
+
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.0, 10,
+      0.3, 0.3, 20,
+      0.6, 0.0, 30
+    ]);
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    let a_size = gl.getAttribLocation(program, 'a_size');
+
+    let BPE = dataVertices.BYTES_PER_ELEMENT;
+    gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, BPE * 3, 0);
+    // 一行三个值， 偏移量为 2 个值，所以 a_size 取的是 10 20 30
+    gl.vertexAttribPointer(a_size, 1, gl.FLOAT, false, BPE * 3, BPE * 2);
+
+    gl.enableVertexAttribArray(a_pos);
+    gl.enableVertexAttribArray(a_size);
+
+
+    let u_color = gl.getUniformLocation(program, 'u_color');
+    gl.uniform4f(u_color, 1.0, 0.0, 0.0, 1.0);
+
+
+    gl.drawArrays(gl.POINTS, 0, 3);
+
+  </script>
+</body>
+
+</html>
