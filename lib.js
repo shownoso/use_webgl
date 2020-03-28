@@ -31,7 +31,7 @@ function initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER) {
 }
 
 /**
- * 初始化 buffer
+ * 初始化 buffer  例 1-7 使用
  * @param {*} gl 
  * @param {*} dataVertices 顶点坐标信息
  * @param {*} program 
@@ -52,3 +52,5 @@ function initBuffer(gl, dataVertices, program, attr) {
   gl.vertexAttribPointer(a_pos, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(a_pos);
 }
+
+
