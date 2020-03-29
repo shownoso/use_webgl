@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>0. 不同视角下的物体</title>
+</head>
+
+<body>
+  <canvas id="canvas" height="400" width="400"></canvas>
+  <div>
+    <div>
+      <p>eye:</p>
+      <label >eyeX: <input type="range" step="0.01" max="1" min="-1" name="eyeX" ></label>
+      <label >eyeY: <input type="range" step="0.01" max="1" min="-1" name="eyeY" ></label>
+      <label >eyeZ: <input type="range" step="0.01" max="1" min="-1" name="eyeZ" ></label>
+    </div>
+    <hr>
+    <div>
+      <p>center:</p>
+      <label >centerX: <input type="range" step="0.01" max="1" min="-1" name="centerX" ></label>
+      <label >centerY: <input type="range" step="0.01" max="1" min="-1" name="centerY" ></label>
+      <label >centerZ: <input type="range" step="0.01" max="1" min="-1" name="centerZ" ></label>
+    </div>
+    <hr>
+    <div>
+      <p>up:</p>
+      <label >upX: <input type="range" step="0.01" max="1" min="-1" name="upX" ></label>
+      <label >upY: <input type="range" step="0.01" max="1" min="-1" name="upY" ></label>
+      <label >upZ: <input type="range" step="0.01" max="1" min="-1" name="upZ" ></label>
+    </div>
+    
+  </div>
+  <script src="./lib.js"></script>
+  <script src="./cuon-matrix.js"></script>
+
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      attribute vec4 a_color;
+      varying vec4 v_color;
+      uniform mat4 u_ViewMatrix;
+      void main() {
+        gl_Position = u_ViewMatrix * a_pos;
+        v_color = a_color;
+      }
+    `;
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      varying vec4 v_color;
+      void main() {
+        gl_FragColor = v_color;
+      }
+    `;
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.5, -0.4, 0.4, 1.0, 0.4,
+      -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+      0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+
+      0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
+      -0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
+      0.0, -0.4, -0.2, 1.0, 0.4, 0.4,
+
+      0.0, 0.5, 0.0, 0.4, 0.4, 1.0,
+      -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
+      0.5, -0.5, 0.0, 0.4, 0.4, 1.0
+    ]);
+
+    let BPE = dataVertices.BYTES_PER_ELEMENT;
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+
+
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    let a_color = gl.getAttribLocation(program, 'a_color');
+
+    gl.vertexAttribPointer(a_pos, 3, gl.FLOAT, false, BPE * 6, 0);
+    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, BPE * 6, BPE * 3);
+
+    gl.enableVertexAttribArray(a_pos);
+    gl.enableVertexAttribArray(a_color);
+
+
+    let u_ViewMatrix = gl.getUniformLocation(program, 'u_ViewMatrix');
+
+
+
+    // 设置 观察点
+    let lookAt = {
+      eyeX: 0.0,
+      eyeY: 0.2, 
+      eyeZ: 0.25, 
+      centerX: 0.0, 
+      centerY: 0.0, 
+      centerZ: 0.0, 
+      upX: 0.0, 
+      upY: 1.0, 
+      upZ: 0.0
+    };
+    let step = 0.05;
+
+    function moveEye() {
+      let viewMatrix = new Matrix4(); // 创建一个4*4 的矩阵
+      const { eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ } = lookAt;
+      viewMatrix.setLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+
+
+      // location, transpose, value
+      gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
+
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 9);
+    }
+    moveEye();
+
+
+    document.addEventListener('input', (e) => {
+     let { name, value } = e.target;
+     lookAt[name] = value || 0;
+     moveEye();
+    }, false)
+
+  </script>
+</body>
+
+</html>

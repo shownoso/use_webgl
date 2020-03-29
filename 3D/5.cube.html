@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5. 正方体 </title>
+</head>
+
+<body>
+  <canvas id="canvas" height="400" width="400"></canvas>
+  <script src="./lib.js"></script>
+  <script src="./cuon-matrix.js"></script>
+
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // u_MVPMatrix 模型 视图 透视投影 矩阵
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      attribute vec4 a_color;
+      varying vec4 v_color;
+      uniform mat4 u_MVPMatrix;
+      void main() {
+        gl_Position = u_MVPMatrix * a_pos;
+        v_color = a_color;
+      }
+    `;
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      varying vec4 v_color;
+      void main() {
+        gl_FragColor = v_color;
+      }
+    `;
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.0, 1.0, 0.5, 0.5, 0.5,
+      1.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+      0.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.5, 0.0, 0.6,
+      1.0, 0.0, 0.0, 0.4, 0.5, 0.9,
+      0.0, 1.0, 0.0, 0.5, 0.3, 0.6,
+      1.0, 1.0, 0.0, 0.5, 0.3, 0.6
+    ]);
+
+    let dataTriangle = new Uint8Array([
+      0, 1, 2, 1, 2, 3,
+      2, 3, 7, 2, 7, 6,
+      1, 7, 3, 1, 5, 7,
+      6, 7, 4, 7, 5, 4,
+      0, 4, 1, 1, 4, 5,
+      2, 6, 4, 0, 2, 4
+    ]);
+
+
+    let BPE = dataVertices.BYTES_PER_ELEMENT;
+    let verticesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, verticesBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+
+
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    let a_color = gl.getAttribLocation(program, 'a_color');
+
+    gl.vertexAttribPointer(a_pos, 3, gl.FLOAT, false, BPE * 6, 0);
+    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, BPE * 6, BPE * 3);
+
+    gl.enableVertexAttribArray(a_pos);
+    gl.enableVertexAttribArray(a_color);
+
+    let triangleBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, dataTriangle, gl.STATIC_DRAW);
+
+
+    let u_MVPMatrix = gl.getUniformLocation(program, 'u_MVPMatrix');
+
+    let perspective = {
+      fovy: 30,
+      aspect: 1.0,
+      near: 1.0,
+      far: 100.0,
+    };
+
+    // 设置 观察点
+    let lookAt = {
+      eyeX: 2.0,
+      eyeY: 3.0,
+      eyeZ: 4.0,
+      centerX: 0.0,
+      centerY: 0.0,
+      centerZ: 0.0,
+      upX: 1.0,
+      upY: 0.0,
+      upZ: 0.0
+    };
+
+    let angle = 0.0;
+
+    let MVPMatrix = new Matrix4();
+
+    const { fovy, aspect, near, far } = perspective;
+    MVPMatrix.setPerspective(fovy, aspect, near, far);
+
+    const { eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ } = lookAt;
+    // 与 perspective 合起来
+    MVPMatrix.lookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+    MVPMatrix.rotate(angle, 0.0, 0.0, 1);
+    gl.uniformMatrix4fv(u_MVPMatrix, false, MVPMatrix.elements);
+
+    // 开启隐藏消除面功能
+    gl.enable(gl.DEPTH_TEST);
+    // 清除画布和深度缓冲区
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
+
+
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>

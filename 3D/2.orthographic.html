@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2. 正射投影 长方体可视空间 </title>
+</head>
+
+<body>
+  <canvas id="canvas" height="400" width="400"></canvas>
+  <script src="./lib.js"></script>
+  <script src="./cuon-matrix.js"></script>
+
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      attribute vec4 a_color;
+      varying vec4 v_color;
+      uniform mat4 u_OrthoMatrix;
+      void main() {
+        gl_Position = u_OrthoMatrix * a_pos;
+        v_color = a_color;
+      }
+    `;
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      varying vec4 v_color;
+      void main() {
+        gl_FragColor = v_color;
+      }
+    `;
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      0.0, 0.5, -0.4, 0.4, 1.0, 0.4,
+      -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+      0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+
+      0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
+      -0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
+      0.0, -0.4, -0.2, 1.0, 0.4, 0.4,
+
+      0.0, 0.5, 0.0, 0.4, 0.4, 1.0,
+      -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
+      0.5, -0.5, 0.0, 0.4, 0.4, 1.0
+    ]);
+
+    let BPE = dataVertices.BYTES_PER_ELEMENT;
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+
+
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    let a_color = gl.getAttribLocation(program, 'a_color');
+
+    gl.vertexAttribPointer(a_pos, 3, gl.FLOAT, false, BPE * 6, 0);
+    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, BPE * 6, BPE * 3);
+
+    gl.enableVertexAttribArray(a_pos);
+    gl.enableVertexAttribArray(a_color);
+
+
+    let u_OrthoMatrix = gl.getUniformLocation(program, 'u_OrthoMatrix');
+
+
+    let ortho = {
+      left: -1.0,
+      right: 1.0,
+      bottom: -1.0,
+      top: 1.0,
+      near: 0.0,
+      far: 0.5,
+    };
+    let step = 0.01;
+
+    function changeOrtho() {
+      let { left, right, bottom, top, near, far } = ortho;
+      console.log(ortho)
+      let orthoMatrix = new Matrix4(); // 创建一个4*4矩阵
+
+      orthoMatrix.setOrtho(left, right, bottom, top, near, far);
+
+      gl.uniformMatrix4fv(u_OrthoMatrix, false, orthoMatrix.elements);
+
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 9);
+    }
+
+
+    changeOrtho();
+
+    window.onkeydown = (e) => {
+      let key = e.keyCode;
+      let { near, far } = ortho;
+      if (key === 38) {
+        near += step;
+      }
+      if (key === 40) {
+        near -= step;
+      }
+
+      ortho = {...ortho, near};
+      changeOrtho();
+    }
+
+
+  </script>
+</body>
+
+</html>

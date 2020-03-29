@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3. 透视投影 金字塔可视空间 </title>
+</head>
+
+<body>
+  <canvas id="canvas" height="400" width="400"></canvas>
+  <script src="./lib.js"></script>
+  <script src="./cuon-matrix.js"></script>
+
+  <script>
+    let canvas = document.getElementById('canvas');
+    let gl = canvas.getContext('webgl');
+    gl.clearColor(0.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    let VERTEX_SHADER = `
+      attribute vec4 a_pos;
+      attribute vec4 a_color;
+      varying vec4 v_color;
+      uniform mat4 u_PerspMatrix;
+      uniform mat4 u_ViewMatrix;
+      void main() {
+        gl_Position = u_PerspMatrix * u_ViewMatrix * a_pos;
+        v_color = a_color;
+      }
+    `;
+    let FRAGMENT_SHADER = `
+      precision lowp float;
+      varying vec4 v_color;
+      void main() {
+        gl_FragColor = v_color;
+      }
+    `;
+    let program = initShader(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+
+    let dataVertices = new Float32Array([
+      // 右侧
+      0.75, 1.0, -4.0, 0.4, 1.0, 0.4, //后方
+      0.25, -1.0, -4.0, 0.4, 1.0, 0.4,
+      1.25, -1.0, -4.0, 1.0, 0.4, 0.4,
+
+      0.75, 1.0, -2.0, 1.0, 1.0, 0.4, // 中间
+      0.25, -1.0, -2.0, 1.0, 1.0, 0.4,
+      1.25, -1.0, -2.0, 1.0, 0.4, 0.4,
+
+      0.75, 1.0, 0.0, 0.4, 0.4, 1.0, // 前方
+      0.25, -1.0, 0.0, 0.4, 0.4, 1.0,
+      1.25, -1.0, 0.0, 1.0, 0.4, 0.4,
+      // 左侧
+      -0.75, 1.0, 0.0, 0.4, 0.4, 1.0, // 前方
+      -1.25, -1.0, 0.0, 0.4, 0.4, 1.0,
+      -0.25, -1.0, 0.0, 1.0, 0.4, 0.4,
+
+      -0.75, 1.0, -4.0, 0.4, 1.0, 0.4, // 后方
+      -1.25, -1.0, -4.0, 0.4, 1.0, 0.4,
+      -0.25, -1.0, -4.0, 1.0, 0.4, 0.4,
+
+      -0.75, 1.0, -2.0, 1.0, 1.0, 0.4, // 中间
+      -1.25, -1.0, -2.0, 1.0, 1.0, 0.4,
+      -0.25, -1.0, -2.0, 1.0, 0.4, 0.4,
+
+    ]);
+
+    let BPE = dataVertices.BYTES_PER_ELEMENT;
+
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, dataVertices, gl.STATIC_DRAW);
+
+
+    let a_pos = gl.getAttribLocation(program, 'a_pos');
+    let a_color = gl.getAttribLocation(program, 'a_color');
+
+    gl.vertexAttribPointer(a_pos, 3, gl.FLOAT, false, BPE * 6, 0);
+    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, BPE * 6, BPE * 3);
+
+    gl.enableVertexAttribArray(a_pos);
+    gl.enableVertexAttribArray(a_color);
+
+
+    let u_PerspMatrix = gl.getUniformLocation(program, 'u_PerspMatrix');
+    let u_ViewMatrix = gl.getUniformLocation(program, 'u_ViewMatrix');
+
+    let perspective = {
+      fovy: 30,
+      aspect: 1.0,
+      near: 1.0,
+      far: 100.0,
+    };
+
+    // 设置 观察点
+    let lookAt = {
+      eyeX: 0.0,
+      eyeY: 0.0,
+      eyeZ: 5,
+      centerX: 0.0,
+      centerY: 0.0,
+      centerZ: -100,
+      upX: 0.0,
+      upY: 1.0,
+      upZ: 0.0
+    };
+
+
+    function perspLook() {
+
+      let orthoMatrix = new Matrix4(); // 创建一个4*4矩阵
+      let { fovy, aspect, near, far } = perspective;
+      // 垂直视角 宽高比 近 远
+      orthoMatrix.setPerspective(fovy, aspect, near, far);
+      gl.uniformMatrix4fv(u_PerspMatrix, false, orthoMatrix.elements);
+
+
+      let viewMatrix = new Matrix4();
+      const { eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ } = lookAt;
+      viewMatrix.setLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+      gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
+
+      // ！webgl 默认按照缓冲区中数据顺序绘制，会造成视图在前后关系上不能按照数据预期展示
+      // 使用  隐藏消除面 功能 并在绘制前 清除深度缓冲区，让绘制按照数据的前后关系进行处理。
+      // 开启隐藏消除面功能
+      gl.enable(gl.DEPTH_TEST);
+      // 清除深度缓冲区
+      gl.clear(gl.DEPTH_BUFFER_BIT);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 18);
+    }
+
+
+    perspLook();
+
+
+
+
+  </script>
+</body>
+
+</html>
