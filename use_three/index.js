@@ -1,5 +1,17 @@
 import * as THREE from 'three';
+import { Sphere } from 'three';
 
+function initStats() {
+  let stats = new Stats();
+  stats.setMode(0);
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.left = '0px';
+  stats.domElement.style.top = '0px';
+  document.getElementById('Stats-output').append(stats.domElement);
+  return stats;
+}
+
+const stats = initStats();
 // 创建场景
 let scene = new THREE.Scene();
 
@@ -26,7 +38,7 @@ scene.add(axes);
 // 创建一个平面
 let planeGeometry = new THREE.PlaneGeometry(70, 50, 1, 1);
 let planeMaterial = new THREE.MeshLambertMaterial({
-  color: 0xfff566, 
+  color: 0xfff566,
   side: THREE.DoubleSide
 });
 let plane = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -72,7 +84,30 @@ var spotLight = new THREE.SpotLight(0xffffff);
 spotLight.position.set(-40, 60, -10);
 // 投射阴影
 spotLight.castShadow = true;
-scene.add( spotLight );
+scene.add(spotLight);
 
-document.body.appendChild( renderer.domElement );
-renderer.render(scene, camera);
+let bounceStep = 0;
+
+function render() {
+  stats.update();
+  renderer.render(scene, camera);
+  cubeRotate();
+  sphereBounce();
+  let id = requestAnimationFrame(render);  
+}
+
+function cubeRotate() {
+  cube.rotation.x += 0.02;
+  cube.rotation.y += 0.02;
+  cube.rotation.z += 0.02;
+}
+
+function sphereBounce() {
+  bounceStep += 0.05;
+  sphere.position.x = 20 + (10 * Math.cos(bounceStep));
+  sphere.position.y = 2 + (10 * Math.abs(Math.sin(bounceStep)));
+}
+
+
+document.body.appendChild(renderer.domElement);
+render();
